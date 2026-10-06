@@ -15,6 +15,10 @@
         <dependency><groupId>org.postgresql</groupId><artifactId>postgresql</artifactId><scope>runtime</scope></dependency>
         <dependency><groupId>com.apianalyzer</groupId><artifactId>module-core</artifactId><version>${project.version}</version></dependency>
         <dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-starter-security</artifactId></dependency>
+            <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
     </dependencies>
     <build>
         <plugins>
@@ -22,5 +26,6 @@
         </plugins>
     </build>
 </project>
+
 
 

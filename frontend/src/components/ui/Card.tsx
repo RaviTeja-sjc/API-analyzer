@@ -11,7 +11,7 @@ interface CardProps {
 
 export const Card: React.FC<CardProps> = ({ children, className = '', title, subtitle, actions }) => {
   return (
-    <div className={card glass-panel  + className}>
+    <div className={`card glass-panel ${className}`}>
       {(title || actions) && (
         <div className="card-header">
           <div>

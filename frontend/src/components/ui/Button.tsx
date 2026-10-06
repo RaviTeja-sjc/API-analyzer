@@ -12,7 +12,7 @@ export const Button: React.FC<ButtonProps> = ({
 }) => {
   return (
     <button 
-      className={tn btn- + variant +  btn- + size +   + className}
+      className={`btn btn-${variant} btn-${size} ${className}`}
       disabled={isLoading || props.disabled}
       {...props}
     >
