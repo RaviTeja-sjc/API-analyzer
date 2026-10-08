@@ -10,6 +10,8 @@ COPY pom.xml .
 COPY module-core/pom.xml module-core/
 COPY module-analysis/pom.xml module-analysis/
 COPY module-ingestion/pom.xml module-ingestion/
+COPY module-integration/pom.xml module-integration/
+COPY module-migration/pom.xml module-migration/
 COPY app-runner/pom.xml app-runner/
 
 # Download dependencies offline (cache layer)
