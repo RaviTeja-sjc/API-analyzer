@@ -1,48 +1,86 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
-
 import { useNavigate } from 'react-router-dom';
+import './Dashboard.css';
+import { NewProjectModal } from './NewProjectModal';
+import { apiClient } from '../../api/client';
+
+interface Project {
+  id: string;
+  name: string;
+  description: string;
+  repositoryUrl: string;
+  createdAt: string;
+  // Additional fields from the backend
+}
 
 export const Dashboard: React.FC = () => {
   const navigate = useNavigate();
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const fetchProjects = async () => {
+    try {
+      setIsLoading(true);
+      const response = await apiClient.get('/projects');
+      // Spring Data REST Page response typically wraps data in content
+      setProjects(response.data.content || response.data || []);
+    } catch (error) {
+      console.error("Failed to fetch projects:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchProjects();
+  }, []);
+
   return (
-    <div style={{ padding: '2rem', maxWidth: '1200px', margin: '0 auto' }}>
-      <header style={{ marginBottom: '2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+    <div className="dashboard-container">
+      <header className="dashboard-header">
         <div>
-          <h1 className="gradient-text" style={{ fontSize: '2.5rem', fontWeight: 700 }}>API Analyzer</h1>
-          <p style={{ color: 'var(--text-muted)' }}>Semantic diffing & impact analysis engine.</p>
+          <h1 className="dashboard-title">API Analyzer</h1>
+          <p className="dashboard-subtitle">Semantic diffing & impact analysis engine.</p>
         </div>
-        <Button size="lg">New Project</Button>
+        <Button size="lg" onClick={() => setIsModalOpen(true)}>New Project</Button>
       </header>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem' }}>
-        <Card title="Payment Gateway API" subtitle="Last analyzed: 2 hours ago">
-          <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
-            <div style={{ background: 'rgba(239, 68, 68, 0.1)', color: 'var(--status-error)', padding: '0.25rem 0.5rem', borderRadius: '4px', fontSize: '0.875rem' }}>
-              3 Breaking Changes
+      {isLoading ? (
+        <div style={{ textAlign: 'center', padding: '4rem', color: 'var(--text-muted)' }}>Loading projects...</div>
+      ) : projects.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: '4rem', color: 'var(--text-muted)' }}>
+          No projects found. Create one to get started!
+        </div>
+      ) : (
+        <div className="dashboard-grid">
+          {projects.map(project => (
+            <div className="dashboard-card-wrapper" key={project.id}>
+              <Card title={project.name} subtitle={project.description || "No description"}>
+                <div style={{ marginTop: '1rem', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                  Repo: <a href={project.repositoryUrl} target="_blank" rel="noreferrer" style={{color: '#818cf8'}}>{project.repositoryUrl}</a>
+                </div>
+                {/* Status Badges could be fetched per project analysis */}
+                <div className="status-badges">
+                   <div className="badge badge-success">Analyzed</div>
+                </div>
+                <div className="card-actions-wrapper">
+                  <Button variant="secondary" onClick={() => navigate(`/analysis/${project.id}`)}>View Report</Button>
+                  <Button variant="primary" onClick={() => navigate(`/migration/${project.id}`)}>Review Patches</Button>
+                </div>
+              </Card>
             </div>
-            <div style={{ background: 'rgba(16, 185, 129, 0.1)', color: 'var(--status-success)', padding: '0.25rem 0.5rem', borderRadius: '4px', fontSize: '0.875rem' }}>
-              4 Safe Changes
-            </div>
-          </div>
-          <div style={{ marginTop: '1.5rem', display: 'flex', gap: '1rem' }}>
-            <Button variant="secondary" style={{ flex: 1 }} onClick={() => navigate('/analysis')}>View Report</Button>
-            <Button variant="primary" style={{ flex: 1 }} onClick={() => navigate('/migration')}>Review Patches</Button>
-          </div>
-        </Card>
+          ))}
+        </div>
+      )}
 
-        <Card title="User Service API" subtitle="Last analyzed: 1 day ago">
-          <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
-            <div style={{ background: 'rgba(16, 185, 129, 0.1)', color: 'var(--status-success)', padding: '0.25rem 0.5rem', borderRadius: '4px', fontSize: '0.875rem' }}>
-              0 Breaking Changes
-            </div>
-          </div>
-          <div style={{ marginTop: '1.5rem' }}>
-            <Button variant="secondary" style={{ width: '100%' }}>View Report</Button>
-          </div>
-        </Card>
-      </div>
+      <NewProjectModal 
+        isOpen={isModalOpen} 
+        onClose={() => setIsModalOpen(false)} 
+        onSuccess={fetchProjects} 
+      />
     </div>
   );
 };

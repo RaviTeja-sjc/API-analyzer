@@ -14,6 +14,20 @@ public class AnalysisJob {
     @Column(length = 4000) private String logs;
     private String idempotencyKey;
     @Column(name = "report_id") private UUID reportId;
+    @Column(name = "result_payload", columnDefinition = "TEXT") private String resultPayload;
+    
+    // Coverage metrics
+    @Column(name = "total_files_discovered") private Integer totalFilesDiscovered;
+    @Column(name = "files_analyzed") private Integer filesAnalyzed;
+    @Column(name = "files_skipped") private Integer filesSkipped;
+    @Column(name = "unsupported_files") private Integer unsupportedFiles;
+    @Column(name = "languages", columnDefinition = "TEXT") private String languages;
+
+    // Scores
+    @Column(name = "security_score") private Integer securityScore;
+    @Column(name = "api_health_score") private Integer apiHealthScore;
+    @Column(name = "score_breakdown", columnDefinition = "TEXT") private String scoreBreakdown;
+
     @Column(insertable = false, updatable = false)
     private OffsetDateTime createdAt;
     

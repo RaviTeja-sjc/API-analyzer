@@ -7,4 +7,15 @@
         <version>1.0.0-SNAPSHOT</version>
     </parent>
     <artifactId>module-integration</artifactId>
+    <dependencies>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.apianalyzer</groupId>
+            <artifactId>module-core</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+    </dependencies>
 </project>

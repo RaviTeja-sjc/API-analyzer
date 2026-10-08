@@ -31,7 +31,6 @@ public class AnalysisReportDto {
         
         @Builder.Default private List<String> impactReasons = new ArrayList<>();
         @Builder.Default private List<String> warnings = new ArrayList<>();
-        @Builder.Default private List<String> recommendations = new ArrayList<>();
         
         @Builder.Default private List<ConsumerReport> impactedConsumers = new ArrayList<>();
     }

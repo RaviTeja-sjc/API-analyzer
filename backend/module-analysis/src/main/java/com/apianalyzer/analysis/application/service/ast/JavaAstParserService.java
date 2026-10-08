@@ -10,17 +10,22 @@ import java.util.List;
 @Service
 public class JavaAstParserService {
     
-    public List<ClassInfo> parseSourceCode(String sourceCode) {
+    public List<ClassInfo> parseSourceCode(String sourceCode, String filePath) {
         List<ClassInfo> classes = new ArrayList<>();
         try {
             CompilationUnit cu = StaticJavaParser.parse(sourceCode);
             String pkgName = cu.getPackageDeclaration().map(p -> p.getNameAsString()).orElse("default");
             
+            List<String> imports = new ArrayList<>();
+            cu.getImports().forEach(i -> imports.add(i.getNameAsString()));
+
             cu.findAll(ClassOrInterfaceDeclaration.class).forEach(cid -> {
                 ClassInfo classInfo = ClassInfo.builder()
                         .packageName(pkgName)
                         .className(cid.getNameAsString())
+                        .filePath(filePath)
                         .isInterface(cid.isInterface())
+                        .imports(new ArrayList<>(imports))
                         .build();
                         
                 cid.getAnnotations().forEach(a -> classInfo.getAnnotations().add(a.getNameAsString()));

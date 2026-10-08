@@ -17,7 +17,7 @@ public class JavaAstParserServiceTest {
                         "    public String getUsers() { return \"Users\"; }\n" +
                         "}";
                         
-        List<ClassInfo> classes = service.parseSourceCode(source);
+        List<ClassInfo> classes = service.parseSourceCode(source, "UserController.java");
         
         assertEquals(1, classes.size());
         ClassInfo clazz = classes.get(0);

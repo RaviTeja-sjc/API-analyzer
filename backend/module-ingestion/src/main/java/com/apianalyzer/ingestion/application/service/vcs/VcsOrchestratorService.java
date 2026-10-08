@@ -5,6 +5,7 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 @Service
 @RequiredArgsConstructor
+@lombok.extern.slf4j.Slf4j
 public class VcsOrchestratorService {
     private final List<VcsProvider> providers;
     
@@ -21,7 +22,7 @@ public class VcsOrchestratorService {
         connection.setValidated(isValid);
         
         // Pseudo Audit Log
-        System.out.println("AUDIT: VCS Connection tested for " + connection.getRepositoryUrl() + ". Success: " + isValid);
+        log.info("AUDIT: VCS Connection tested for " + connection.getRepositoryUrl() + ". Success: " + isValid);
         
         if (!isValid) {
             throw new SecurityException("VCS Access Validation Failed. Check credentials and repository URL.");

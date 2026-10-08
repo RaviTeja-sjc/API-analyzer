@@ -40,10 +40,9 @@ public class AnalysisReportBuilderService {
                 cr.setImpactReasons(change.getImpact().getReasons());
             }
             
-            // Warnings & Recommendations
+            // Warnings
             if (change.getSeverity() == ChangeSeverity.BREAKING) {
                 cr.getWarnings().add("This change will break downstream clients.");
-                cr.getRecommendations().add("Consider versioning the API endpoint instead of modifying it directly.");
             }
             
             // Attach impacts

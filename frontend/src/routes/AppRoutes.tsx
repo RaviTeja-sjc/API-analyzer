@@ -8,8 +8,8 @@ export const AppRoutes: React.FC = () => {
   return (
     <Routes>
       <Route path="/" element={<Dashboard />} />
-      <Route path="/analysis" element={<AnalysisReportView />} />
-      <Route path="/migration" element={<MigrationReviewView />} />
+      <Route path="/analysis/:id" element={<AnalysisReportView />} />
+      <Route path="/migration/:id" element={<MigrationReviewView />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );

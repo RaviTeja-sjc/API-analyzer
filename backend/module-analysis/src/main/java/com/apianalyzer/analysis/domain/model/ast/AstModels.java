@@ -7,7 +7,9 @@ public class AstModels {
     public static class ClassInfo {
         private String packageName;
         private String className;
+        private String filePath; // For source evidence
         private boolean isInterface;
+        @Builder.Default private List<String> imports = new ArrayList<>();
         @Builder.Default private List<String> annotations = new ArrayList<>();
         @Builder.Default private List<MethodInfo> methods = new ArrayList<>();
         @Builder.Default private List<String> typeReferences = new ArrayList<>();

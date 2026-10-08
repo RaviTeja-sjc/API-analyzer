@@ -35,7 +35,7 @@ public class AnalysisPerformanceTest {
         
         // Optimize: Use parallel streams for memory-conscious AST parsing
         simulatedRepoFiles.parallelStream().forEach(file -> {
-            service.parseSourceCode(file);
+            service.parseSourceCode(file, "File.java");
         });
         
         long duration = System.currentTimeMillis() - startTime;

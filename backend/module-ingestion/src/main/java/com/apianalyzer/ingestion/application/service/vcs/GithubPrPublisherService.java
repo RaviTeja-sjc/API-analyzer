@@ -1,7 +1,10 @@
 package com.apianalyzer.ingestion.application.service.vcs;
 import com.apianalyzer.core.domain.entity.VcsConnection;
 import org.springframework.stereotype.Service;
+import lombok.extern.slf4j.Slf4j;
+
 @Service
+@Slf4j
 public class GithubPrPublisherService {
     
     public void publishPrComment(VcsConnection connection, String prNumber, int breakingChanges, int impactedConsumers, String reportUrl) {
@@ -26,6 +29,6 @@ public class GithubPrPublisherService {
         // 3. If exists: PATCH /repos/{owner}/{repo}/issues/comments/{commentId}
         // 4. Else: POST /repos/{owner}/{repo}/issues/{prNumber}/comments
         
-        System.out.println("Published Idempotent PR Comment to GitHub PR #" + prNumber + ":\n" + markdown.toString());
+        log.info("Published Idempotent PR Comment to GitHub PR #{}:\n{}", prNumber, markdown.toString());
     }
 }

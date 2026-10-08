@@ -1,0 +1,23 @@
+# Secrets (NEVER COMMIT)
+.env
+.env.local
+.env.*.local
+
+# IDE
+.idea/
+.vscode/
+*.iml
+*.swp
+
+# Node / Frontend
+node_modules/
+dist/
+npm-debug.log*
+
+# Java / Backend
+target/
+*.class
+*.jar
+*.war
+*.log
+.mvn/wrapper/maven-wrapper.jar

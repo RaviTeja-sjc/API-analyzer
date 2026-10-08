@@ -14,6 +14,10 @@
         <dependency><groupId>org.flywaydb</groupId><artifactId>flyway-core</artifactId></dependency>
         <dependency><groupId>org.postgresql</groupId><artifactId>postgresql</artifactId><scope>runtime</scope></dependency>
         <dependency><groupId>com.apianalyzer</groupId><artifactId>module-core</artifactId><version>${project.version}</version></dependency>
+        <dependency><groupId>com.apianalyzer</groupId><artifactId>module-analysis</artifactId><version>${project.version}</version></dependency>
+        <dependency><groupId>com.apianalyzer</groupId><artifactId>module-ingestion</artifactId><version>${project.version}</version></dependency>
+        <dependency><groupId>com.apianalyzer</groupId><artifactId>module-integration</artifactId><version>${project.version}</version></dependency>
+        <dependency><groupId>com.apianalyzer</groupId><artifactId>module-migration</artifactId><version>${project.version}</version></dependency>
         <dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-starter-security</artifactId></dependency>
             <dependency>
             <groupId>org.springframework.boot</groupId>

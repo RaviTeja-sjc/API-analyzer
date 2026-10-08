@@ -16,7 +16,7 @@ public class ConsumerDetectionService {
     
     public List<ApiConsumerImpact> detectImpacts(String fileName, String sourceCode, List<ApiChange> changes) {
         List<ApiConsumerImpact> impacts = new ArrayList<>();
-        List<ClassInfo> classes = astParser.parseSourceCode(sourceCode);
+        List<ClassInfo> classes = astParser.parseSourceCode(sourceCode, "Consumer.java");
         
         for (ClassInfo clazz : classes) {
             for (ApiChange change : changes) {

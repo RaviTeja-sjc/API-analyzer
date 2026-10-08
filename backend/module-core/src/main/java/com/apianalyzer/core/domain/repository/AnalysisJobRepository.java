@@ -5,4 +5,5 @@ import java.util.Optional;
 import java.util.UUID;
 public interface AnalysisJobRepository extends JpaRepository<AnalysisJob, UUID> {
     Optional<AnalysisJob> findByIdempotencyKeyAndStatusIn(String idempotencyKey, java.util.List<String> statuses);
+    java.util.List<AnalysisJob> findByProjectIdOrderByCreatedAtDesc(UUID projectId);
 }
