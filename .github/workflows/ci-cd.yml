@@ -91,11 +91,19 @@ jobs:
       - name: Trigger Backend Deployment
         run: |
           echo "Triggering Render Backend deployment..."
-          curl -X POST "${{ secrets.RENDER_BACKEND_DEPLOY_HOOK }}"
+          if [ -z "${{ secrets.RENDER_BACKEND_DEPLOY_HOOK }}" ]; then
+            echo "RENDER_BACKEND_DEPLOY_HOOK is not set. Skipping."
+          else
+            curl -X POST "${{ secrets.RENDER_BACKEND_DEPLOY_HOOK }}"
+          fi
       - name: Trigger Frontend Deployment
         run: |
           echo "Triggering Render Frontend deployment..."
-          curl -X POST "${{ secrets.RENDER_FRONTEND_DEPLOY_HOOK }}"
+          if [ -z "${{ secrets.RENDER_FRONTEND_DEPLOY_HOOK }}" ]; then
+            echo "RENDER_FRONTEND_DEPLOY_HOOK is not set. Skipping."
+          else
+            curl -X POST "${{ secrets.RENDER_FRONTEND_DEPLOY_HOOK }}"
+          fi
       - name: Rollback Strategy Documented
         run: |
           echo "Safe Rollback Strategy: In Render Dashboard, select previous successful deployment and click 'Rollback'."
