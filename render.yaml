@@ -31,7 +31,7 @@ services:
     env: static
     buildCommand: npm install && npm run build
     staticPublishPath: ./frontend/dist
-    region: ohio
+    region: singapore
     plan: free
     autoDeploy: false
     envVars:
