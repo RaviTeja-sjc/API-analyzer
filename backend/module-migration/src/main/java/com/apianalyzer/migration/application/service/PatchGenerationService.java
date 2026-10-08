@@ -10,7 +10,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
+
 
 @Service
 @RequiredArgsConstructor
@@ -36,7 +36,7 @@ public class PatchGenerationService {
                     String actualFileContent = snapshot.getFiles().stream()
                             .filter(f -> f.getPath().equals(proposal.getFilePath()))
                             .findFirst()
-                            .map(RepositorySnapshot.RepositoryFile::getContent)
+                            .map(f -> f.getContent())
                             .orElse("");
                             
                     if (actualFileContent.contains(issue.getEvidence())) {
@@ -73,7 +73,7 @@ public class PatchGenerationService {
         String currentFileContent = currentSnapshot.getFiles().stream()
                 .filter(f -> f.getPath().equals(proposal.getFilePath()))
                 .findFirst()
-                .map(RepositorySnapshot.RepositoryFile::getContent)
+                .map(f -> f.getContent())
                 .orElse("");
         
         String currentHash = Integer.toHexString(currentFileContent.hashCode());

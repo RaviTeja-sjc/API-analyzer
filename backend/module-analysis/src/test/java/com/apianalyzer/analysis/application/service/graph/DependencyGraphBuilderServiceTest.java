@@ -19,6 +19,7 @@ public class DependencyGraphBuilderServiceTest {
     private final ObjectMapper mapper = new ObjectMapper();
 
     @Test
+    @SuppressWarnings("unchecked")
     void testBuildGraph_WithSimpleControllerServiceRepository() throws Exception {
         ClassInfo repository = ClassInfo.builder()
                 .className("UserRepository")
@@ -95,6 +96,7 @@ public class DependencyGraphBuilderServiceTest {
     }
     
     @Test
+    @SuppressWarnings("unchecked")
     void testBuildGraph_NoFalseEdges() throws Exception {
         ClassInfo c1 = ClassInfo.builder().className("ClassA").build();
         ClassInfo c2 = ClassInfo.builder().className("ClassB").build();

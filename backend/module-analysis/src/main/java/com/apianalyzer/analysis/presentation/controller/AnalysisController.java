@@ -6,7 +6,7 @@ import com.apianalyzer.core.domain.repository.AnalysisJobRepository;
 import com.apianalyzer.core.domain.repository.ProjectRepository;
 import com.apianalyzer.analysis.application.service.AsyncAnalysisOrchestrator;
 import com.apianalyzer.analysis.application.service.RepositoryAnalysisOrchestrator;
-import com.apianalyzer.analysis.application.service.GithubIntegrationService;
+
 import com.apianalyzer.core.domain.entity.ProjectIssue;
 import com.apianalyzer.core.domain.repository.ProjectIssueRepository;
 import com.apianalyzer.analysis.application.service.recommendation.RecommendationEngineService;
@@ -29,7 +29,7 @@ public class AnalysisController {
     private final ProjectRepository projectRepository;
     private final AsyncAnalysisOrchestrator analysisOrchestrator;
     private final RepositoryAnalysisOrchestrator repositoryAnalysisOrchestrator;
-    private final GithubIntegrationService githubIntegrationService;
+
     private final ProjectIssueRepository projectIssueRepository;
     private final RecommendationEngineService recommendationEngineService;
 

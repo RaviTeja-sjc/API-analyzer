@@ -1,6 +1,6 @@
 package com.apianalyzer.analysis.application.dto;
 
-import com.apianalyzer.core.domain.entity.AnalysisJob;
+
 import com.apianalyzer.core.domain.entity.ProjectIssue;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
