@@ -19,10 +19,7 @@
         <dependency><groupId>com.apianalyzer</groupId><artifactId>module-integration</artifactId><version>${project.version}</version></dependency>
         <dependency><groupId>com.apianalyzer</groupId><artifactId>module-migration</artifactId><version>${project.version}</version></dependency>
         <dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-starter-security</artifactId></dependency>
-            <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-actuator</artifactId>
-        </dependency>
+
     </dependencies>
     <build>
         <plugins>
