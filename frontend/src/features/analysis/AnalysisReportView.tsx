@@ -74,13 +74,30 @@ export const AnalysisReportView: React.FC = () => {
   }
 
   if (report.status === 'FAILED') {
+    const isRateLimited = (report.logs || report.error || '').includes('rate limit');
     return (
       <div className="report-container" style={{ textAlign: 'center', paddingTop: '4rem' }}>
-        <h2 style={{ color: '#ef4444' }}>Analysis Failed</h2>
-        <p style={{ color: '#94a3b8', marginTop: '0.5rem' }}>The analysis pipeline encountered an error while processing the repository.</p>
-        <pre style={{ marginTop: '1.5rem', background: 'rgba(239, 68, 68, 0.1)', color: '#fca5a5', border: '1px solid rgba(239, 68, 68, 0.3)', padding: '1.2rem', borderRadius: '8px', textAlign: 'left', display: 'inline-block', maxWidth: '700px', whiteSpace: 'pre-wrap' }}>
+        <h2 style={{ color: isRateLimited ? '#f59e0b' : '#ef4444' }}>
+          {isRateLimited ? 'GitHub API Rate Limit Reached' : 'Analysis Failed'}
+        </h2>
+        <p style={{ color: '#94a3b8', marginTop: '0.5rem', maxWidth: '650px', margin: '0.5rem auto 0 auto', lineHeight: '1.5' }}>
+          {isRateLimited 
+            ? 'GitHub limits unauthenticated API requests to 60 per hour per IP address. When analyzing large repositories with hundreds of files, configuring a GITHUB_TOKEN provides 5,000 requests per hour.'
+            : 'The analysis pipeline encountered an error while processing the repository.'}
+        </p>
+        <pre style={{ marginTop: '1.5rem', background: isRateLimited ? 'rgba(245, 158, 11, 0.1)' : 'rgba(239, 68, 68, 0.1)', color: isRateLimited ? '#fde68a' : '#fca5a5', border: isRateLimited ? '1px solid rgba(245, 158, 11, 0.3)' : '1px solid rgba(239, 68, 68, 0.3)', padding: '1.2rem', borderRadius: '8px', textAlign: 'left', display: 'inline-block', maxWidth: '700px', whiteSpace: 'pre-wrap' }}>
           {report.logs || report.error || "Unknown error occurred during analysis."}
         </pre>
+        {isRateLimited && (
+          <div style={{ marginTop: '1.5rem', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', padding: '1rem 1.5rem', borderRadius: '8px', display: 'inline-block', textAlign: 'left', maxWidth: '700px' }}>
+            <strong style={{ color: '#60a5fa' }}>💡 How to unlock 5,000 requests/hour:</strong>
+            <p style={{ margin: '0.5rem 0 0 0', color: '#cbd5e1', fontSize: '0.9rem' }}>
+              Add your personal access token to your backend <code style={{ color: '#fde68a' }}>.env</code> file:
+              <br />
+              <code style={{ background: 'rgba(0,0,0,0.4)', padding: '0.2rem 0.5rem', borderRadius: '4px', display: 'inline-block', marginTop: '0.4rem', color: '#a5b4fc' }}>GITHUB_TOKEN=ghp_your_github_token_here</code>
+            </p>
+          </div>
+        )}
         <div style={{ marginTop: '2rem' }}>
           <Button variant="primary" onClick={triggerAnalysis} disabled={isTriggering}>
             {isTriggering ? 'Retrying...' : 'Retry Analysis'}
@@ -200,6 +217,25 @@ export const AnalysisReportView: React.FC = () => {
                       <ul>{change.warnings.map((w: string, i: number) => <li key={i}>{w}</li>)}</ul>
                     </div>
                   )}
+
+                  {change.impactedConsumers?.length > 0 && (
+                    <div className="impacted-consumers-block" style={{ marginTop: '1rem', background: 'rgba(59, 130, 246, 0.08)', border: '1px solid rgba(59, 130, 246, 0.25)', padding: '0.8rem 1rem', borderRadius: '8px' }}>
+                      <strong style={{ color: '#93c5fd', fontSize: '0.9rem' }}>Downstream Internal Components Traced ({change.impactedConsumers.length}):</strong>
+                      <ul style={{ margin: '0.4rem 0 0 1.2rem', padding: 0, color: '#cbd5e1', fontSize: '0.85rem' }}>
+                        {change.impactedConsumers.map((consumer: any, i: number) => (
+                          <li key={i} style={{ marginBottom: '0.2rem' }}>
+                            <span style={{ color: '#60a5fa', fontWeight: 'bold' }}>{consumer.consumerName}</span>
+                            <span style={{ color: '#94a3b8' }}> ({consumer.relationship})</span>
+                            {consumer.filePath && (
+                              <span style={{ fontFamily: 'monospace', color: '#a5b4fc', marginLeft: '0.5rem' }}>
+                                {consumer.filePath}{consumer.lineNumber ? `:${consumer.lineNumber}` : ''}
+                              </span>
+                            )}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
                   
                   {report?.recommendations?.filter((r: any) => r.category === 'API' && r.filePath === change.endpointPath && r.ruleId === 'API-' + change.changeType).map((rec: any, idx: number) => (
                     <div key={idx} className="alert success-alert" style={{ marginTop: '1rem' }}>
@@ -212,7 +248,25 @@ export const AnalysisReportView: React.FC = () => {
             ))}
             {(!apiAnalysis.changes || apiAnalysis.changes.length === 0) && (
               <div style={{ padding: '3rem', textAlign: 'center', color: '#94a3b8', border: '1px dashed rgba(255,255,255,0.2)', borderRadius: '12px' }}>
-                No API changes or commits found for this repository.
+                {apiAnalysis.apiSpecStatus === 'NO_SPEC_DISCOVERED' ? (
+                  <div>
+                    <h3 style={{ color: '#cbd5e1', marginBottom: '0.5rem' }}>No OpenAPI / Swagger Specification Discovered</h3>
+                    <p style={{ maxWidth: '650px', margin: '0 auto', fontSize: '0.95rem', lineHeight: '1.6' }}>
+                      No valid OpenAPI 3.x or Swagger 2.0 contract was discovered in this repository.
+                      API diffing is inactive, but full static analysis, architecture, and code quality results are available on the <strong>ENTIRE PROJECT ANALYZER</strong> tab.
+                    </p>
+                  </div>
+                ) : apiAnalysis.apiSpecStatus === 'DISCOVERED' ? (
+                  <div>
+                    <h3 style={{ color: '#10b981', marginBottom: '0.5rem' }}>Verified: No API Contract Changes</h3>
+                    <p style={{ maxWidth: '650px', margin: '0 auto', fontSize: '0.95rem', lineHeight: '1.6' }}>
+                      Specification <code style={{ color: '#93c5fd' }}>{apiAnalysis.apiSpecPath || 'openapi.yaml'}</code> was analyzed between {apiAnalysis.baseVersion || 'HEAD~1'} and {apiAnalysis.headVersion || 'HEAD'}.
+                      All endpoints, parameters, schemas, and response types are backward-compatible.
+                    </p>
+                  </div>
+                ) : (
+                  <div>No API changes or commits found for this repository.</div>
+                )}
               </div>
             )}
           </div>

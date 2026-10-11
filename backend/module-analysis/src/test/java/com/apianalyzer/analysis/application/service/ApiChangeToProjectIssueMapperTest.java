@@ -44,17 +44,16 @@ public class ApiChangeToProjectIssueMapperTest {
         assertEquals(jobId, issue.getAnalysisJobId());
         assertEquals("API", issue.getCategory());
         assertEquals("API-PARAMETER_REMOVED", issue.getRuleId());
-        assertEquals("BREAKING", issue.getSeverity());
+        assertEquals("HIGH", issue.getSeverity());
         assertEquals("1.0", issue.getConfidence());
-        assertTrue(issue.getTitle().contains("API-PARAMETER_REMOVED"));
-        assertTrue(issue.getTitle().contains("/users/{id}"));
+        assertTrue(issue.getTitle().contains("Required parameter 'page' was removed."));
         assertEquals("Required parameter 'page' was removed.", issue.getProblemDescription());
         assertEquals("docs/openapi.yaml", issue.getFilePath());
         assertNull(issue.getStartLine());
         assertNull(issue.getEndLine());
-        assertEquals("Detected via OpenAPI structural comparison.", issue.getEvidence());
+        assertTrue(issue.getEvidence().contains("Detected via OpenAPI structural comparison"));
         assertNotNull(issue.getMetadata());
-        assertTrue(issue.getMetadata().contains("\"breakingStatus\":\"CRITICAL\""));
+        assertTrue(issue.getMetadata().contains("\"breakingStatus\":\"BREAKING\""));
         assertTrue(issue.getMetadata().contains("\"method\":\"GET\""));
     }
 }

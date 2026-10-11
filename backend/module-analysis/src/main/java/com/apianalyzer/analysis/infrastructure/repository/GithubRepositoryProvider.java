@@ -28,22 +28,22 @@ public class GithubRepositoryProvider implements RepositoryProvider {
                 .build())
             .collect(Collectors.toList());
 
+        String resolvedSha = githubIntegrationService.resolveBranchOrCommitToSha(repoUrl, branchOrCommit);
+
         return RepositorySnapshot.builder()
             .url(repoUrl)
-            .headCommitSha(branchOrCommit) // Ideally resolve branch to sha
+            .headCommitSha(resolvedSha)
             .files(files)
             .build();
     }
 
     @Override
     public String fetchFileContent(String repoUrl, String commitSha, String path) {
-        java.util.regex.Pattern pattern = java.util.regex.Pattern.compile("github\\.com/([^/]+)/([^/]+)");
-        java.util.regex.Matcher matcher = pattern.matcher(repoUrl);
-        if (matcher.find()) {
-            String owner = matcher.group(1);
-            String repo = matcher.group(2).replace(".git", "");
-            return githubIntegrationService.getFileContent(owner, repo, commitSha, path);
+        try {
+            var coords = githubIntegrationService.parseCoordinates(repoUrl);
+            return githubIntegrationService.getFileContent(coords.getOwner(), coords.getRepo(), commitSha, path);
+        } catch (Exception e) {
+            return null;
         }
-        return null;
     }
 }

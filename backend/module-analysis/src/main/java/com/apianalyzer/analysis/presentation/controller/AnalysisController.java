@@ -107,12 +107,30 @@ public class AnalysisController {
         }
 
         List<Map<String, Object>> changes = new ArrayList<>();
+        String apiSpecStatus = "NO_SPEC_DISCOVERED";
+        String apiSpecPath = null;
+        Object apiExaminedFiles = new ArrayList<>();
+        Object apiMatchedFiles = new ArrayList<>();
+
         if (latestJob != null && latestJob.getResultPayload() != null && !latestJob.getResultPayload().isEmpty()) {
             try {
                 Map<String, Object> payloadMap = new com.fasterxml.jackson.databind.ObjectMapper().readValue(
                     latestJob.getResultPayload(), new com.fasterxml.jackson.core.type.TypeReference<Map<String, Object>>(){}
                 );
                 
+                if (payloadMap.containsKey("apiSpecStatus")) {
+                    apiSpecStatus = String.valueOf(payloadMap.get("apiSpecStatus"));
+                }
+                if (payloadMap.containsKey("apiSpecPath")) {
+                    apiSpecPath = (String) payloadMap.get("apiSpecPath");
+                }
+                if (payloadMap.containsKey("apiExaminedFiles")) {
+                    apiExaminedFiles = payloadMap.get("apiExaminedFiles");
+                }
+                if (payloadMap.containsKey("apiMatchedFiles")) {
+                    apiMatchedFiles = payloadMap.get("apiMatchedFiles");
+                }
+
                 if (payloadMap.containsKey("apiChanges")) {
                     @SuppressWarnings("unchecked")
                     List<Map<String, Object>> apiChanges = (List<Map<String, Object>>) payloadMap.get("apiChanges");
@@ -122,17 +140,40 @@ public class AnalysisController {
                             change.put("endpointMethod", diffChange.get("method"));
                             change.put("endpointPath", diffChange.get("path"));
                             change.put("changeType", diffChange.get("type"));
-                            change.put("breakingStatus", diffChange.get("impact") != null ? diffChange.get("impact").toString() : "NON_BREAKING");
-                            change.put("severityLevel", diffChange.get("severity"));
+                            
+                            String rawImpact = diffChange.get("impact") != null ? diffChange.get("impact").toString() : "";
+                            String rawSeverity = diffChange.get("severity") != null ? diffChange.get("severity").toString() : "";
+                            
+                            String breakingStatus = "NON_BREAKING";
+                            if ("BREAKING".equalsIgnoreCase(rawImpact) || "BREAKING".equalsIgnoreCase(rawSeverity)) {
+                                breakingStatus = "BREAKING";
+                            } else if ("POTENTIALLY_BREAKING".equalsIgnoreCase(rawImpact) || "POTENTIALLY_BREAKING".equalsIgnoreCase(rawSeverity)) {
+                                breakingStatus = "POTENTIALLY_BREAKING";
+                            }
+                            
+                            change.put("breakingStatus", breakingStatus);
+                            change.put("severityLevel", !rawSeverity.isEmpty() ? rawSeverity : breakingStatus);
+                            
+                            int impactScore = 10;
+                            if ("BREAKING".equals(breakingStatus)) impactScore = 95;
+                            else if ("POTENTIALLY_BREAKING".equals(breakingStatus)) impactScore = 50;
+                            change.put("impactScore", impactScore);
+
                             change.put("description", diffChange.get("description"));
                             change.put("oldValue", diffChange.get("oldValue"));
                             change.put("newValue", diffChange.get("newValue"));
                             
                             List<String> realImpactReasons = new ArrayList<>();
-                            realImpactReasons.add("Detected via OpenAPI diff.");
+                            realImpactReasons.add("Detected via OpenAPI structural diff.");
                             change.put("impactReasons", realImpactReasons);
                             change.put("warnings", new ArrayList<>());
-                            change.put("impactedConsumers", new ArrayList<>());
+                            
+                            Object consumers = diffChange.get("impactedConsumers");
+                            if (consumers instanceof List) {
+                                change.put("impactedConsumers", consumers);
+                            } else {
+                                change.put("impactedConsumers", new ArrayList<>());
+                            }
                             
                             changes.add(change);
                         }
@@ -150,13 +191,30 @@ public class AnalysisController {
         long breakingChanges = changes.stream().filter(c -> "BREAKING".equals(c.get("breakingStatus"))).count();
         long potentiallyBreaking = changes.stream().filter(c -> "POTENTIALLY_BREAKING".equals(c.get("breakingStatus"))).count();
         
+        java.util.Set<String> uniqueConsumers = new java.util.HashSet<>();
+        for (Map<String, Object> c : changes) {
+            Object consumersObj = c.get("impactedConsumers");
+            if (consumersObj instanceof List<?>) {
+                for (Object consumer : (List<?>) consumersObj) {
+                    if (consumer instanceof Map<?, ?> m) {
+                        Object name = m.get("consumerName");
+                        if (name != null) uniqueConsumers.add(name.toString());
+                    }
+                }
+            }
+        }
+
         Map<String, Object> summary = new HashMap<>();
         summary.put("totalChanges", changes.size());
         summary.put("breakingChanges", breakingChanges);
         summary.put("potentiallyBreakingChanges", potentiallyBreaking);
-        summary.put("totalImpactedConsumers", 0);
+        summary.put("totalImpactedConsumers", uniqueConsumers.size());
         apiAnalysis.put("summary", summary);
         apiAnalysis.put("changes", changes);
+        apiAnalysis.put("apiSpecStatus", apiSpecStatus);
+        apiAnalysis.put("apiSpecPath", apiSpecPath);
+        apiAnalysis.put("apiExaminedFiles", apiExaminedFiles);
+        apiAnalysis.put("apiMatchedFiles", apiMatchedFiles);
         
         // Phase 5: Add Scores to Response
         if (latestJob != null && latestJob.getScoreBreakdown() != null && !latestJob.getScoreBreakdown().isEmpty()) {
@@ -164,6 +222,18 @@ public class AnalysisController {
                 Map<String, Object> scoreData = new com.fasterxml.jackson.databind.ObjectMapper().readValue(
                     latestJob.getScoreBreakdown(), new com.fasterxml.jackson.core.type.TypeReference<Map<String, Object>>(){}
                 );
+                if (!scoreData.containsKey("securityScore") && scoreData.containsKey("security")) {
+                    Object sec = scoreData.get("security");
+                    if (sec instanceof Map && ((Map<?, ?>) sec).containsKey("finalScore")) {
+                        scoreData.put("securityScore", ((Map<?, ?>) sec).get("finalScore"));
+                    }
+                }
+                if (!scoreData.containsKey("apiHealthScore") && scoreData.containsKey("apiHealth")) {
+                    Object health = scoreData.get("apiHealth");
+                    if (health instanceof Map && ((Map<?, ?>) health).containsKey("finalScore")) {
+                        scoreData.put("apiHealthScore", ((Map<?, ?>) health).get("finalScore"));
+                    }
+                }
                 response.put("scoring", scoreData);
             } catch (Exception e) {}
         }

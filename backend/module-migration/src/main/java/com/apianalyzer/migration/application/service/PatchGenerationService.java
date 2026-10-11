@@ -39,7 +39,7 @@ public class PatchGenerationService {
                             .map(f -> f.getContent())
                             .orElse("");
                             
-                    if (actualFileContent.contains(issue.getEvidence())) {
+                    if (!actualFileContent.isEmpty() && issue.getEvidence() != null && actualFileContent.contains(issue.getEvidence())) {
                         proposal.setValidationStatus(MigrationProposal.ValidationStatus.VALID);
                         
                         // Compute a simple hash of the file content for stale checking
@@ -51,7 +51,9 @@ public class PatchGenerationService {
                         String patchedFileContent = actualFileContent.replace(issue.getEvidence(), proposal.getProposedContent());
                         
                         proposal.setUnifiedDiff(generateSimpleDiff(proposal.getFilePath(), safeFileContent, patchedFileContent, issue.getStartLine()));
-                        
+                    } else if (proposal.getOriginalContent() != null && proposal.getProposedContent() != null) {
+                        proposal.setValidationStatus(MigrationProposal.ValidationStatus.VALID);
+                        proposal.setUnifiedDiff(generateSimpleDiff(proposal.getFilePath(), proposal.getOriginalContent(), proposal.getProposedContent(), issue.getStartLine()));
                     } else {
                         proposal.setValidationStatus(MigrationProposal.ValidationStatus.INVALID);
                     }

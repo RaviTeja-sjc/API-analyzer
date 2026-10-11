@@ -1,5 +1,7 @@
 package com.apianalyzer.migration.presentation.controller;
 
+import com.apianalyzer.core.domain.entity.AnalysisJob;
+import com.apianalyzer.core.domain.repository.AnalysisJobRepository;
 import com.apianalyzer.migration.domain.entity.MigrationProposal;
 import com.apianalyzer.migration.domain.repository.MigrationProposalRepository;
 import lombok.RequiredArgsConstructor;
@@ -15,10 +17,18 @@ import java.util.UUID;
 public class MigrationController {
 
     private final MigrationProposalRepository repository;
+    private final AnalysisJobRepository jobRepository;
 
-    @GetMapping("/analysis/{analysisJobId}/proposals")
-    public ResponseEntity<List<MigrationProposal>> getProposalsForAnalysis(@PathVariable UUID analysisJobId) {
-        return ResponseEntity.ok(repository.findByAnalysisJobId(analysisJobId));
+    @GetMapping("/analysis/{id}/proposals")
+    public ResponseEntity<List<MigrationProposal>> getProposalsForAnalysis(@PathVariable UUID id) {
+        List<MigrationProposal> proposals = repository.findByAnalysisJobId(id);
+        if (proposals.isEmpty()) {
+            List<AnalysisJob> jobs = jobRepository.findByProjectIdOrderByCreatedAtDesc(id);
+            if (!jobs.isEmpty()) {
+                proposals = repository.findByAnalysisJobId(jobs.get(0).getId());
+            }
+        }
+        return ResponseEntity.ok(proposals);
     }
     
     @GetMapping("/proposals/{proposalId}")

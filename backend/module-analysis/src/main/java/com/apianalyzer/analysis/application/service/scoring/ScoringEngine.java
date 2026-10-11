@@ -34,6 +34,8 @@ public class ScoringEngine {
         ScoreBreakdown breakdown = ScoreBreakdown.builder()
                 .security(securityScore)
                 .apiHealth(apiScore)
+                .securityScore(securityScore.getFinalScore())
+                .apiHealthScore(apiScore.getFinalScore())
                 .build();
 
         job.setSecurityScore(securityScore.getFinalScore());
