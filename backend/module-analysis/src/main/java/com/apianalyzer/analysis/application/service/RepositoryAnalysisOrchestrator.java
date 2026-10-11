@@ -22,6 +22,9 @@ import java.util.regex.Pattern;
 import com.apianalyzer.analysis.domain.model.ast.AstModels.ClassInfo;
 
 
+import com.apianalyzer.analysis.application.service.scoring.ScoringEngine;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 @Service
 @RequiredArgsConstructor
 public class RepositoryAnalysisOrchestrator {
@@ -32,6 +35,8 @@ public class RepositoryAnalysisOrchestrator {
     private final GithubIntegrationService githubIntegrationService;
     private final JavaAstParserService javaAstParserService;
     private final com.apianalyzer.analysis.application.service.graph.DependencyGraphBuilderService graphBuilderService;
+    private final ScoringEngine scoringEngine;
+    private final ObjectMapper objectMapper;
     
     @Async
     public CompletableFuture<Void> processRepositoryAnalysisAsync(UUID jobId, UUID projectId) {
@@ -114,7 +119,31 @@ public class RepositoryAnalysisOrchestrator {
             
             // Generate Dependency Graph
             String graphJson = graphBuilderService.buildGraph(allClasses, allFiles);
-            job.setResultPayload(graphJson);
+            Map<String, Object> resultPayloadMap = new HashMap<>();
+            try {
+                Map<String, Object> graphMap = objectMapper.readValue(graphJson, new com.fasterxml.jackson.core.type.TypeReference<Map<String, Object>>(){});
+                resultPayloadMap.put("dependencyGraph", graphMap);
+            } catch (Exception ex) {
+                resultPayloadMap.put("dependencyGraph", new HashMap<>());
+            }
+            
+            // Retain any existing apiChanges
+            if (job.getResultPayload() != null && !job.getResultPayload().isEmpty()) {
+                try {
+                    Map<String, Object> existing = objectMapper.readValue(job.getResultPayload(), new com.fasterxml.jackson.core.type.TypeReference<Map<String, Object>>(){});
+                    if (existing.containsKey("apiChanges")) {
+                        resultPayloadMap.put("apiChanges", existing.get("apiChanges"));
+                    }
+                } catch (Exception ex) {}
+            }
+            
+            job.setResultPayload(objectMapper.writeValueAsString(resultPayloadMap));
+            jobRepository.save(job);
+
+            // Compute security and API health scores
+            try {
+                scoringEngine.calculateAndPersistScores(jobId, false);
+            } catch (Exception ex) {}
             
             updateStatus(job, "COMPLETED", 100, "Repository analysis completed successfully.");
             

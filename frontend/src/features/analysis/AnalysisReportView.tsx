@@ -66,9 +66,26 @@ export const AnalysisReportView: React.FC = () => {
       <div className="report-container" style={{ textAlign: 'center', paddingTop: '4rem' }}>
         <h2>Analysis is running...</h2>
         <div style={{ marginTop: '2rem', fontSize: '1.2rem' }}>Progress: {report.progress}%</div>
-        <pre style={{ marginTop: '1rem', background: '#f4f4f4', padding: '1rem', borderRadius: '8px', textAlign: 'left', display: 'inline-block', maxWidth: '600px', whiteSpace: 'pre-wrap' }}>
+        <pre style={{ marginTop: '1rem', background: 'rgba(255,255,255,0.05)', color: '#94a3b8', padding: '1rem', borderRadius: '8px', textAlign: 'left', display: 'inline-block', maxWidth: '600px', whiteSpace: 'pre-wrap' }}>
           {report.logs}
         </pre>
+      </div>
+    );
+  }
+
+  if (report.status === 'FAILED') {
+    return (
+      <div className="report-container" style={{ textAlign: 'center', paddingTop: '4rem' }}>
+        <h2 style={{ color: '#ef4444' }}>Analysis Failed</h2>
+        <p style={{ color: '#94a3b8', marginTop: '0.5rem' }}>The analysis pipeline encountered an error while processing the repository.</p>
+        <pre style={{ marginTop: '1.5rem', background: 'rgba(239, 68, 68, 0.1)', color: '#fca5a5', border: '1px solid rgba(239, 68, 68, 0.3)', padding: '1.2rem', borderRadius: '8px', textAlign: 'left', display: 'inline-block', maxWidth: '700px', whiteSpace: 'pre-wrap' }}>
+          {report.logs || report.error || "Unknown error occurred during analysis."}
+        </pre>
+        <div style={{ marginTop: '2rem' }}>
+          <Button variant="primary" onClick={triggerAnalysis} disabled={isTriggering}>
+            {isTriggering ? 'Retrying...' : 'Retry Analysis'}
+          </Button>
+        </div>
       </div>
     );
   }

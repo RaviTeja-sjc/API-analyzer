@@ -89,20 +89,38 @@ jobs:
     if: github.ref == 'refs/heads/main'
     steps:
       - name: Trigger Backend Deployment
+        env:
+          BACKEND_HOOK: ${{ secrets.RENDER_BACKEND_DEPLOY_HOOK }}
         run: |
           echo "Triggering Render Backend deployment..."
-          if [ -z "${{ secrets.RENDER_BACKEND_DEPLOY_HOOK }}" ]; then
-            echo "RENDER_BACKEND_DEPLOY_HOOK is not set. Skipping."
+          if [ -z "$BACKEND_HOOK" ]; then
+            echo "RENDER_BACKEND_DEPLOY_HOOK is not set in GitHub secrets. Skipping."
           else
-            curl -X POST "${{ secrets.RENDER_BACKEND_DEPLOY_HOOK }}"
+            response=$(curl -s -w "\n%{http_code}" -X POST "$BACKEND_HOOK" || true)
+            http_code=$(echo "$response" | tail -n1)
+            echo "Render Backend response HTTP code: $http_code"
+            if [ "$http_code" -ge 200 ] && [ "$http_code" -lt 300 ]; then
+              echo "Backend deployment triggered successfully."
+            else
+              echo "::warning::Render Backend deploy hook returned HTTP $http_code."
+            fi
           fi
       - name: Trigger Frontend Deployment
+        env:
+          FRONTEND_HOOK: ${{ secrets.RENDER_FRONTEND_DEPLOY_HOOK }}
         run: |
           echo "Triggering Render Frontend deployment..."
-          if [ -z "${{ secrets.RENDER_FRONTEND_DEPLOY_HOOK }}" ]; then
-            echo "RENDER_FRONTEND_DEPLOY_HOOK is not set. Skipping."
+          if [ -z "$FRONTEND_HOOK" ]; then
+            echo "RENDER_FRONTEND_DEPLOY_HOOK is not set in GitHub secrets. Skipping."
           else
-            curl -X POST "${{ secrets.RENDER_FRONTEND_DEPLOY_HOOK }}"
+            response=$(curl -s -w "\n%{http_code}" -X POST "$FRONTEND_HOOK" || true)
+            http_code=$(echo "$response" | tail -n1)
+            echo "Render Frontend response HTTP code: $http_code"
+            if [ "$http_code" -ge 200 ] && [ "$http_code" -lt 300 ]; then
+              echo "Frontend deployment triggered successfully."
+            else
+              echo "::warning::Render Frontend deploy hook returned HTTP $http_code."
+            fi
           fi
       - name: Rollback Strategy Documented
         run: |

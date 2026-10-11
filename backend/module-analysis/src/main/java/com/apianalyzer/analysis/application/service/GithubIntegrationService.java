@@ -19,6 +19,7 @@ public class GithubIntegrationService {
 
     private HttpEntity<Void> createHttpEntity(String url) {
         HttpHeaders headers = new HttpHeaders();
+        headers.set("User-Agent", "API-Analyzer-Service/1.0 (https://github.com/RaviTeja-sjc/API-analyzer)");
         if (url != null && url.startsWith("https://api.github.com")) {
             headers.set("Accept", "application/vnd.github.v3+json");
             String token = System.getenv("GITHUB_TOKEN");
@@ -80,7 +81,23 @@ public class GithubIntegrationService {
             if (matcher.find()) {
                 String owner = matcher.group(1);
                 String repo = matcher.group(2).replace(".git", "");
-                String apiUrl = "https://api.github.com/repos/" + owner + "/" + repo + "/git/trees/" + branch + "?recursive=1";
+
+                String ref = branch;
+                // If caller requests HEAD or HEAD~1, resolve via commits list
+                if ("HEAD".equalsIgnoreCase(branch) || "HEAD~1".equalsIgnoreCase(branch)) {
+                    List<Map<String, Object>> commits = getLatestCommits(repoUrl);
+                    if (!commits.isEmpty()) {
+                        if ("HEAD~1".equalsIgnoreCase(branch) && commits.size() > 1) {
+                            ref = (String) commits.get(1).get("sha");
+                        } else {
+                            ref = (String) commits.get(0).get("sha");
+                        }
+                    } else {
+                        ref = "main";
+                    }
+                }
+
+                String apiUrl = "https://api.github.com/repos/" + owner + "/" + repo + "/git/trees/" + ref + "?recursive=1";
                 
                 ResponseEntity<Map<String, Object>> response = restTemplate.exchange(
                     apiUrl, HttpMethod.GET, createHttpEntity(apiUrl), new ParameterizedTypeReference<Map<String, Object>>() {}
@@ -92,7 +109,7 @@ public class GithubIntegrationService {
                 }
             }
         } catch (Exception e) {
-            throw new RuntimeException("Failed to fetch repository tree from GitHub API", e);
+            throw new RuntimeException("Failed to fetch repository tree from GitHub API: " + e.getMessage(), e);
         }
         return new ArrayList<>();
     }
@@ -100,7 +117,9 @@ public class GithubIntegrationService {
     public String getFileContent(String owner, String repo, String branch, String path) {
         try {
             String rawUrl = "https://raw.githubusercontent.com/" + owner + "/" + repo + "/" + branch + "/" + path;
-            ResponseEntity<String> response = restTemplate.getForEntity(rawUrl, String.class);
+            ResponseEntity<String> response = restTemplate.exchange(
+                rawUrl, HttpMethod.GET, createHttpEntity(rawUrl), String.class
+            );
             return response.getBody();
         } catch (Exception e) {
             return null;

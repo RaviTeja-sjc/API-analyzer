@@ -22,6 +22,8 @@ services:
         generateValue: true
       - key: DB_ENCRYPTION_KEY
         generateValue: true
+      - key: GITHUB_TOKEN
+        sync: false
       - key: CORS_ALLOWED_ORIGINS
         value: https://your-frontend.onrender.com
     autoDeploy: false

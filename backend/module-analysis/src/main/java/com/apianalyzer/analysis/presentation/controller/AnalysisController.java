@@ -69,6 +69,14 @@ public class AnalysisController {
             response.put("logs", latestJob.getLogs());
             return ResponseEntity.ok(response);
         }
+
+        if (latestJob != null && "FAILED".equals(latestJob.getStatus())) {
+            response.put("status", "FAILED");
+            response.put("progress", latestJob.getProgress());
+            response.put("logs", latestJob.getLogs());
+            response.put("error", latestJob.getLogs());
+            return ResponseEntity.ok(response);
+        }
         
         response.put("status", "COMPLETED");
         
@@ -93,83 +101,62 @@ public class AnalysisController {
         if (project != null && project.getRepositoryUrl() != null) {
             apiAnalysis.put("baseVersion", "HEAD~1");
             apiAnalysis.put("headVersion", "HEAD");
-            
-            List<Map<String, Object>> changes = new ArrayList<>();
-            if (latestJob != null && latestJob.getResultPayload() != null && !latestJob.getResultPayload().isEmpty()) {
-                try {
-                    Map<String, Object> payloadMap = new com.fasterxml.jackson.databind.ObjectMapper().readValue(
-                        latestJob.getResultPayload(), new com.fasterxml.jackson.core.type.TypeReference<Map<String, Object>>(){}
-                    );
-                    
-                    if (payloadMap.containsKey("apiChanges")) {
-                        @SuppressWarnings("unchecked")
-                        List<Map<String, Object>> apiChanges = (List<Map<String, Object>>) payloadMap.get("apiChanges");
-                        if (apiChanges != null) {
-                            for (Map<String, Object> diffChange : apiChanges) {
-                                Map<String, Object> change = new HashMap<>();
-                                change.put("endpointMethod", diffChange.get("method"));
-                                change.put("endpointPath", diffChange.get("path"));
-                                change.put("changeType", diffChange.get("type"));
-                                change.put("breakingStatus", diffChange.get("impact") != null ? diffChange.get("impact").toString() : "NON_BREAKING");
-                                change.put("severityLevel", diffChange.get("severity"));
-                                change.put("description", diffChange.get("description"));
-                                change.put("oldValue", diffChange.get("oldValue"));
-                                change.put("newValue", diffChange.get("newValue"));
-                                
-                                List<String> realImpactReasons = new ArrayList<>();
-                                realImpactReasons.add("Detected via OpenAPI diff.");
-                                change.put("impactReasons", realImpactReasons);
-                                change.put("warnings", new ArrayList<>());
-                                change.put("impactedConsumers", new ArrayList<>());
-                                
-                                changes.add(change);
-                            }
-                        }
-                    }
-                    
-                    if (payloadMap.containsKey("dependencyGraph")) {
-                        apiAnalysis.put("dependencyGraph", payloadMap.get("dependencyGraph"));
-                    }
-                } catch (Exception e) {}
-            }
-            
-            long breakingChanges = changes.stream().filter(c -> "BREAKING".equals(c.get("breakingStatus"))).count();
-            long potentiallyBreaking = changes.stream().filter(c -> "POTENTIALLY_BREAKING".equals(c.get("breakingStatus"))).count();
-            
-            Map<String, Object> summary = new HashMap<>();
-            summary.put("totalChanges", changes.size());
-            summary.put("breakingChanges", breakingChanges);
-            summary.put("potentiallyBreakingChanges", potentiallyBreaking);
-            summary.put("totalImpactedConsumers", 0);
-            apiAnalysis.put("summary", summary);
-            apiAnalysis.put("changes", changes);
-            
-            response.put("apiAnalysis", apiAnalysis);
-            return ResponseEntity.ok(response);
+        } else {
+            apiAnalysis.put("baseVersion", "N/A");
+            apiAnalysis.put("headVersion", "N/A");
         }
-        
-        // No GitHub URL or error fetching
-        apiAnalysis.put("baseVersion", "N/A");
-        apiAnalysis.put("headVersion", "N/A");
-        
-        Map<String, Object> summary = new HashMap<>();
-        summary.put("totalChanges", 0);
-        summary.put("breakingChanges", 0);
-        summary.put("potentiallyBreakingChanges", 0);
-        summary.put("totalImpactedConsumers", 0);
-        apiAnalysis.put("summary", summary);
-        
-        apiAnalysis.put("changes", new ArrayList<>());
-        
-        // Load Dependency Graph if available (from Repository analyzer)
+
+        List<Map<String, Object>> changes = new ArrayList<>();
         if (latestJob != null && latestJob.getResultPayload() != null && !latestJob.getResultPayload().isEmpty()) {
             try {
-                Map<String, Object> graphData = new com.fasterxml.jackson.databind.ObjectMapper().readValue(
+                Map<String, Object> payloadMap = new com.fasterxml.jackson.databind.ObjectMapper().readValue(
                     latestJob.getResultPayload(), new com.fasterxml.jackson.core.type.TypeReference<Map<String, Object>>(){}
                 );
-                apiAnalysis.put("dependencyGraph", graphData);
+                
+                if (payloadMap.containsKey("apiChanges")) {
+                    @SuppressWarnings("unchecked")
+                    List<Map<String, Object>> apiChanges = (List<Map<String, Object>>) payloadMap.get("apiChanges");
+                    if (apiChanges != null) {
+                        for (Map<String, Object> diffChange : apiChanges) {
+                            Map<String, Object> change = new HashMap<>();
+                            change.put("endpointMethod", diffChange.get("method"));
+                            change.put("endpointPath", diffChange.get("path"));
+                            change.put("changeType", diffChange.get("type"));
+                            change.put("breakingStatus", diffChange.get("impact") != null ? diffChange.get("impact").toString() : "NON_BREAKING");
+                            change.put("severityLevel", diffChange.get("severity"));
+                            change.put("description", diffChange.get("description"));
+                            change.put("oldValue", diffChange.get("oldValue"));
+                            change.put("newValue", diffChange.get("newValue"));
+                            
+                            List<String> realImpactReasons = new ArrayList<>();
+                            realImpactReasons.add("Detected via OpenAPI diff.");
+                            change.put("impactReasons", realImpactReasons);
+                            change.put("warnings", new ArrayList<>());
+                            change.put("impactedConsumers", new ArrayList<>());
+                            
+                            changes.add(change);
+                        }
+                    }
+                }
+                
+                if (payloadMap.containsKey("dependencyGraph")) {
+                    apiAnalysis.put("dependencyGraph", payloadMap.get("dependencyGraph"));
+                } else if (payloadMap.containsKey("nodes") && payloadMap.containsKey("edges")) {
+                    apiAnalysis.put("dependencyGraph", payloadMap);
+                }
             } catch (Exception e) {}
         }
+        
+        long breakingChanges = changes.stream().filter(c -> "BREAKING".equals(c.get("breakingStatus"))).count();
+        long potentiallyBreaking = changes.stream().filter(c -> "POTENTIALLY_BREAKING".equals(c.get("breakingStatus"))).count();
+        
+        Map<String, Object> summary = new HashMap<>();
+        summary.put("totalChanges", changes.size());
+        summary.put("breakingChanges", breakingChanges);
+        summary.put("potentiallyBreakingChanges", potentiallyBreaking);
+        summary.put("totalImpactedConsumers", 0);
+        apiAnalysis.put("summary", summary);
+        apiAnalysis.put("changes", changes);
         
         // Phase 5: Add Scores to Response
         if (latestJob != null && latestJob.getScoreBreakdown() != null && !latestJob.getScoreBreakdown().isEmpty()) {
